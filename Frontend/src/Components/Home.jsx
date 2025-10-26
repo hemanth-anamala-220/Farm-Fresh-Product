@@ -12,7 +12,7 @@ const Home = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({ type: null, src: "" });
 
-  const API_BASE = import.meta?.env?.VITE_API_URL || "http://localhost:5050";
+  const API_BASE = import.meta?.env?.VITE_API_URL || "https://farm-fresh-product-backend-txzb.onrender.com";
 
   useEffect(() => {
     const load = async () => {
