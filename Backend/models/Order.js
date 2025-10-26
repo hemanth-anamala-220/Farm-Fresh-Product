@@ -1,20 +1,48 @@
-import mongoose from "mongoose";
-
-const orderItemSchema = new mongoose.Schema({
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  quantity: { type: Number, required: true },
-});
+const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-  customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  items: [orderItemSchema],
-  totalPrice: { type: Number, required: true },
-  contactName: { type: String },
-  contactPhone: { type: String },
-  paymentMethod: { type: String, enum: ['online', 'cod', 'upi'], default: 'cod' },
-  deliveryAddress: { type: String },
-  status: { type: String, enum: ['pending','confirmed','delivered','cancelled'], default: 'pending' },
-  createdAt: { type: Date, default: Date.now },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  items: [{
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true
+    },
+    name: String,
+    quantity: Number,
+    price: Number
+  }],
+  totalPrice: {
+    type: Number,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+    default: 'pending'
+  },
+  paymentMethod: {
+    type: String,
+    default: 'cod'
+  },
+  deliveryAddress: {
+    type: String,
+    required: true
+  },
+  contactName: {
+    type: String,
+    required: true
+  },
+  contactPhone: {
+    type: String,
+    required: true
+  }
+}, {
+  timestamps: true
 });
 
-export default mongoose.model('Order', orderSchema);
+module.exports = mongoose.model('Order', orderSchema);

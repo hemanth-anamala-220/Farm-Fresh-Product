@@ -14,6 +14,9 @@ export default function Cart() {
   const [paymentMethod, setPaymentMethod] = useState("cod");
   const API_BASE = import.meta?.env?.VITE_API_URL || "http://localhost:5050";
 
+  // Helper function to get consistent product ID
+  const getProductId = (item) => item._id || item.id;
+
   useEffect(() => {
     loadCart();
     // prefill contact info if user is logged in
@@ -35,9 +38,10 @@ export default function Cart() {
   const updateQuantity = (productId, newQuantity) => {
     let cart = JSON.parse(localStorage.getItem("cart") || "[]");
     cart = cart
-      .map((item) =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
+      .map((item) => {
+        const itemId = getProductId(item);
+        return itemId === productId ? { ...item, quantity: newQuantity } : item;
+      })
       .filter((item) => item.quantity > 0);
     localStorage.setItem("cart", JSON.stringify(cart));
     loadCart();
@@ -45,7 +49,10 @@ export default function Cart() {
 
   const removeItem = (productId) => {
     let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-    cart = cart.filter((item) => item.id !== productId);
+    cart = cart.filter((item) => {
+      const itemId = getProductId(item);
+      return itemId !== productId;
+    });
     localStorage.setItem("cart", JSON.stringify(cart));
     loadCart();
     toast.success("Item removed from cart");
@@ -55,8 +62,9 @@ export default function Cart() {
     return cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  const handleCheckout = (e) => {
+  const handleCheckout = async (e) => {
     e.preventDefault();
+    
     if (!deliveryAddress.trim()) {
       toast.error("Please enter delivery address");
       return;
@@ -69,48 +77,70 @@ export default function Cart() {
       toast.error("Please enter your phone number");
       return;
     }
-    // Build order payload and send to backend
-    (async () => {
-      try {
-        const storedUser = localStorage.getItem('user');
-        if (!storedUser) {
-          toast.error('Please login to place an order');
-          navigate('/login');
-          return;
-        }
-        const user = JSON.parse(storedUser);
-        if (user.role !== 'customer') {
-          toast.error('Only customers can place orders');
-          return;
-        }
-        const buyerId = user.id || user._id;
-        const items = cartItems.map(ci => ({ productId: ci._id || ci.id, quantity: ci.quantity }));
-        const totalPrice = calculateTotal() + 20; // include delivery fee
 
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/api/products/order`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-          body: JSON.stringify({ items, buyerId, totalPrice, paymentMethod, deliveryAddress, contactName, contactPhone })
-        });
-
-        const data = await res.json();
-        if (!res.ok) {
-          const msg = data?.message || 'Failed to place order';
-          toast.error(msg);
-          return;
-        }
-
-        localStorage.removeItem("cart");
-        setCartItems([]);
-        setShowCheckout(false);
-        toast.success(`Order placed successfully! Order ID: ${data.order._id}`);
-        navigate("/");
-      } catch (err) {
-        console.error('Checkout error', err);
-        toast.error('Checkout failed. Please try again.');
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (!storedUser) {
+        toast.error('Please login to place an order');
+        navigate('/login');
+        return;
       }
-    })();
+      
+      const user = JSON.parse(storedUser);
+      if (user.role !== 'customer') {
+        toast.error('Only customers can place orders');
+        return;
+      }
+      
+      const buyerId = user.id || user._id;
+      // Use the helper function to get consistent product IDs
+      const items = cartItems.map(ci => {
+        const productId = getProductId(ci);
+        console.log('Product ID being sent:', productId, 'Type:', typeof productId);
+        return { 
+          productId: String(productId), // Ensure it's a string
+          quantity: ci.quantity 
+        };
+      });
+      const totalPrice = calculateTotal() + 20; // include delivery fee
+      
+      console.log('Order payload:', { items, buyerId, totalPrice, paymentMethod, deliveryAddress, contactName, contactPhone });
+
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/api/products/order`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          ...(token ? { Authorization: `Bearer ${token}` } : {}) 
+        },
+        body: JSON.stringify({ 
+          items, 
+          buyerId, 
+          totalPrice, 
+          paymentMethod, 
+          deliveryAddress, 
+          contactName, 
+          contactPhone 
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Order error response:', data);
+        const msg = data?.message || data?.error || 'Failed to place order';
+        toast.error(msg);
+        return;
+      }
+
+      localStorage.removeItem("cart");
+      setCartItems([]);
+      setShowCheckout(false);
+      toast.success(`Order placed successfully! Order ID: ${data.order._id}`);
+      navigate("/");
+    } catch (err) {
+      console.error('Checkout error', err);
+      toast.error('Checkout failed. Please try again.');
+    }
   };
 
   const total = calculateTotal();
@@ -138,35 +168,38 @@ export default function Cart() {
           <div className="cart-grid">
             {/* Cart Items */}
             <div className="cart-items">
-              {cartItems.map((item) => (
-                <div key={item.id} className="cart-item">
-                  <img src={item.image} alt={item.name} className="cart-img" />
-                  <div className="cart-info">
-                    <h3>{item.name}</h3>
-                    <p>{item.farmer} • {item.location}</p>
-                    <div className="price-info">
-                      <span className="item-price">₹{item.price}/{item.unit}</span>
-                      {item.organic && <span className="organic-badge">Organic</span>}
+              {cartItems.map((item) => {
+                const itemId = getProductId(item);
+                return (
+                  <div key={itemId} className="cart-item">
+                    <img src={item.image} alt={item.name} className="cart-img" />
+                    <div className="cart-info">
+                      <h3>{item.name}</h3>
+                      <p>{item.farmer} • {item.location}</p>
+                      <div className="price-info">
+                        <span className="item-price">₹{item.price}/{item.unit}</span>
+                        {item.organic && <span className="organic-badge">Organic</span>}
+                      </div>
+                    </div>
+                    <div className="cart-quantity">
+                      <button onClick={() => updateQuantity(itemId, item.quantity - 1)}>
+                        <Minus className="icon" />
+                      </button>
+                      <span className="quantity">{item.quantity}</span>
+                      <button onClick={() => updateQuantity(itemId, item.quantity + 1)}>
+                        <Plus className="icon" />
+                      </button>
+                      <button onClick={() => removeItem(itemId)}>
+                        <Trash2 className="icon remove-icon" />
+                      </button>
+                    </div>
+                    <div className="cart-subtotal">
+                      <span>Subtotal:</span>
+                      <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                     </div>
                   </div>
-                  <div className="cart-quantity">
-                    <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>
-                      <Minus className="icon" />
-                    </button>
-                    <span className="quantity">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>
-                      <Plus className="icon" />
-                    </button>
-                    <button onClick={() => removeItem(item.id)}>
-                      <Trash2 className="icon remove-icon" />
-                    </button>
-                  </div>
-                  <div className="cart-subtotal">
-                    <span>Subtotal:</span>
-                    <span>₹{(item.price * item.quantity).toFixed(2)}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Order Summary */}
@@ -212,11 +245,23 @@ export default function Cart() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="name">Full Name *</label>
-                  <input id="name" value={contactName} onChange={(e) => setContactName(e.target.value)} placeholder="Recipient name" required />
+                  <input 
+                    id="name" 
+                    value={contactName} 
+                    onChange={(e) => setContactName(e.target.value)} 
+                    placeholder="Recipient name" 
+                    required 
+                  />
                 </div>
                 <div className="form-group">
                   <label htmlFor="phone">Phone Number *</label>
-                  <input id="phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} placeholder="Mobile number" required />
+                  <input 
+                    id="phone" 
+                    value={contactPhone} 
+                    onChange={(e) => setContactPhone(e.target.value)} 
+                    placeholder="Mobile number" 
+                    required 
+                  />
                 </div>
                 <div className="form-group">
                   <label>Payment Method</label>
@@ -249,7 +294,9 @@ export default function Cart() {
                 </div>
                 <div className="form-actions">
                   <button type="submit" className="place-btn">Place Order</button>
-                  <button type="button" className="cancel-btn" onClick={() => setShowCheckout(false)}>Cancel</button>
+                  <button type="button" className="cancel-btn" onClick={() => setShowCheckout(false)}>
+                    Cancel
+                  </button>
                 </div>
               </form>
             </div>

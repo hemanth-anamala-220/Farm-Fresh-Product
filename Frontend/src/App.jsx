@@ -10,6 +10,7 @@ import Signup from "./Components/Signup";
 import "./App.css";
 import Dashboard from "./Components/Dashboard";
 import FarmerDashboard from "./Components/Farmer-Dashboard";
+import Footer from "./Components/Footer";
 
 const App = () => {
   return (
@@ -25,9 +26,9 @@ const App = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/farmer-Dashboard" element={<FarmerDashboard />} />
-
-
+          {/* <Route path="/footer" element={<Footer />} /> */}
         </Routes>
+        <Footer />
       </div>
     </Router>
   );

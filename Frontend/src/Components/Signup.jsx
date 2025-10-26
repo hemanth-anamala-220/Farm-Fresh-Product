@@ -4,7 +4,7 @@ import { UserPlus, Mail, Lock, User, MapPin, Phone, Leaf } from 'lucide-react';
 import { toast } from 'sonner';
 import '../Styles/Auth.css';
 
-export default function Signup() {
+const Signup = () => {
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState({
 		name: '',
@@ -184,3 +184,5 @@ export default function Signup() {
 		</div>
 	);
 }
+
+export default Signup;
