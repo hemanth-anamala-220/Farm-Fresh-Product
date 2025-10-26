@@ -15,7 +15,7 @@ const Signup = () => {
 		location: ''
 	});
 	const [loading, setLoading] = useState(false);
-	const API_BASE = import.meta?.env?.VITE_API_URL || 'http://localhost:5050';
+	const API_BASE = import.meta?.env?.VITE_API_URL || 'https://farm-fresh-product-backend-txzb.onrender.com';
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
