@@ -30,7 +30,7 @@ const FarmerDashboard = () => {
 
   const fetchProducts = async (farmerId) => {
     try {
-      const res = await axios.get(`http://localhost:5050/api/products/farmer/${farmerId}`);
+      const res = await axios.get(`https://farm-fresh-product-backend-txzb.onrender.com/api/products/farmer/${farmerId}`);
       setProducts(res.data);
     } catch (err) {
       console.error("Failed to fetch products", err);
