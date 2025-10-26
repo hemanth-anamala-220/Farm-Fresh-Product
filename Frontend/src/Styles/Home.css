@@ -1,0 +1,273 @@
+/* Home.css */
+
+/* Container */
+.home-container {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Arial', sans-serif;
+  background-color: #f9fafb;
+  min-height: 100vh;
+  background: #f0f2f5;
+}
+
+/* Hero Section */
+.hero-section {
+  text-align: center;
+  margin-bottom: 3rem;
+  background-color:rgb(5, 120, 5);
+  padding: 20px 20px 20px 20px;
+
+}
+
+.hero-section h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.hero-section p {
+  color: white;
+  /* background-color: #10b981; */
+  margin-bottom: 1rem;
+}
+
+.hero-section .search-box input {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  transition: all 0.3s ease;
+}
+
+.hero-section .search-box input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+}
+
+/* Product Section */
+.product-section h4 {
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Product Card */
+.product-card {
+  background-color: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card img {
+  width: 100%;
+  height: 10rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.product-card h3 {
+  font-weight: 600;
+  font-size: 1.125rem;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.product-card p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  flex-grow: 1;
+}
+
+.product-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.product-info .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+.price {
+  color: #10b981;
+  font-weight: bold;
+  margin-top: 0.5rem;
+}
+
+/* Add to Cart Button */
+.add-cart-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: #10b981;
+  color: #ffffff;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.add-cart-btn:hover {
+  background-color: #059669;
+}
+
+/* Farmer Join Section */
+.join-section {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.join-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.join-section p {
+  color: #6b7280;
+  margin-bottom: 1rem;
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.join-btn {
+  padding: 0.5rem 1.5rem;
+  background-color: #3b82f6;
+  color: #ffffff;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.join-btn:hover {
+  background-color: #2563eb;
+}
+
+/* Home Header */
+.home-header {
+  background: white;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-icon {
+  color: #4CAF50;
+}
+
+/* Logout Button */
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: #f44336;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.logout-btn:hover {
+  background: #d32f2f;
+}
+
+/* Home Main */
+.home-main {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.home-main h2 {
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Navigation Cards */
+.navigation-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.nav-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.nav-card svg {
+  color: #4CAF50;
+  margin-bottom: 1rem;
+}
+
+.nav-card h3 {
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.nav-card p {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .navigation-cards {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,96 @@
+.header {
+  background-color: #1b8a3d;
+  color: white;
+  padding: 0.8rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.logo-icon {
+  font-size: 1.8rem;
+  margin-right: 0.5rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.3s ease;
+}
+
+.nav a:hover {
+  color: #e2f5e5;
+}
+
+.login-btn {
+  background-color: white;
+  color: #1b8a3d;
+  border: none;
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.login-btn:hover {
+  background-color: #e8f6ea;
+}
+
+.mobile-icons {
+  display: none;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cart-icon {
+  cursor: pointer;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .nav {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: #1b8a3d;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 200px;
+    padding: 1rem;
+    display: none;
+  }
+
+  .nav.open {
+    display: flex;
+  }
+
+  .mobile-icons {
+    display: flex;
+  }
+}

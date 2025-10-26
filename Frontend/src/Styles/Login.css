@@ -1,0 +1,150 @@
+/* 🌿 Farm Fresh Login Page */
+
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0fff4, #c6f6d5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  font-family: "Poppins", sans-serif;
+}
+
+.login-card {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 20px rgba(0, 128, 0, 0.1);
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.login-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 25px rgba(0, 128, 0, 0.15);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  color: #059669;
+  text-decoration: none;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 5px;
+}
+
+.brand-section {
+  margin-bottom: 1rem;
+}
+
+.brand-icon {
+  color: #059669;
+  width: 36px;
+  height: 36px;
+  margin: 0 auto 0.5rem;
+}
+
+.brand-section h1 {
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #065f46;
+}
+
+.brand-section p {
+  color: #4b5563;
+  font-size: 0.9rem;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tab {
+  flex: 1;
+  padding: 0.6rem 0;
+  border: none;
+  background: #ecfdf5;
+  color: #047857;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.tab.active {
+  background: #10b981;
+  color: white;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+label {
+  font-weight: 500;
+  color: #065f46;
+  font-size: 0.9rem;
+}
+
+input,
+select {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #d1fae5;
+  border-radius: 8px;
+  background: #f9fafb;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+input:focus,
+select:focus {
+  border-color: #10b981;
+  background: #ecfdf5;
+}
+
+.btn {
+  margin-top: 1rem;
+  background: #10b981;
+  color: white;
+  border: none;
+  padding: 0.7rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background 0.2s;
+}
+
+.btn:hover {
+  background: #059669;
+}
+
+.demo-info {
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
+.demo-info p:first-child {
+  font-weight: 600;
+  color: #065f46;
+}
