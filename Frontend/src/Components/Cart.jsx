@@ -12,7 +12,7 @@ export default function Cart() {
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
-  const API_BASE = import.meta?.env?.VITE_API_URL || "http://localhost:5050";
+  const API_BASE = import.meta?.env?.VITE_API_URL || "https://farm-fresh-product-backend-txzb.onrender.com";
 
   // Helper function to get consistent product ID
   const getProductId = (item) => item._id || item.id;
