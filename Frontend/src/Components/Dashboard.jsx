@@ -22,9 +22,12 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("products");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  const API_BASE = import.meta?.env?.VITE_API_URL || "https://farm-fresh-product-backend-txzb.onrender.com";
+  const API_BASE = import.meta?.env?.VITE_API_URL || "http://localhost:5050";
 
-  // ✅ Load user and cart on mount
+  // Helper function to get consistent product ID (same as Cart.jsx)
+  const getProductId = (item) => item._id || item.id;
+
+  // Load user and cart on mount
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (!storedUser) {
@@ -46,7 +49,7 @@ const Dashboard = () => {
     }
   }, [navigate]);
 
-  // ✅ Fetch products and orders
+  // Fetch products and orders
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -91,14 +94,15 @@ const Dashboard = () => {
     }
   }, [user, API_BASE]);
 
-  // ✅ Add item to cart
+  // Add item to cart
   const addToCart = (product) => {
     if (product.stock < 1) {
       toast.error("Product is out of stock");
       return;
     }
 
-    const existing = cart.find((item) => item.productId === product._id);
+    const productId = getProductId(product);
+    const existing = cart.find((item) => getProductId(item) === productId);
     
     if (existing && existing.quantity >= product.stock) {
       toast.error("Cannot add more than available stock");
@@ -107,18 +111,23 @@ const Dashboard = () => {
 
     const newCart = existing
       ? cart.map((item) =>
-          item.productId === product._id
+          getProductId(item) === productId
             ? { ...item, quantity: item.quantity + 1 }
             : item
         )
       : [
           ...cart,
           {
-            productId: product._id,
+            _id: product._id,
+            id: product._id,
             name: product.name,
             price: product.price,
             quantity: 1,
             unit: product.unit,
+            image: product.imageUrl,
+            farmer: product.farmerName || "Farm Fresh",
+            location: product.location || "Local",
+            organic: product.organic || false
           },
         ];
 
@@ -127,21 +136,21 @@ const Dashboard = () => {
     toast.success(`Added ${product.name} to cart`);
   };
 
-  // ✅ Remove item
+  // Remove item from cart
   const removeFromCart = (productId) => {
-    const newCart = cart.filter((item) => item.productId !== productId);
+    const newCart = cart.filter((item) => getProductId(item) !== productId);
     setCart(newCart);
     localStorage.setItem("cart", JSON.stringify(newCart));
     toast.info("Item removed from cart");
   };
 
-  // ✅ Update quantity
+  // Update quantity
   const updateQuantity = (productId, delta) => {
-    const product = products.find(p => p._id === productId);
+    const product = products.find(p => getProductId(p) === productId);
     
     const newCart = cart
       .map((item) => {
-        if (item.productId === productId) {
+        if (getProductId(item) === productId) {
           const newQuantity = item.quantity + delta;
           if (newQuantity < 1) return null;
           
@@ -160,40 +169,36 @@ const Dashboard = () => {
     localStorage.setItem("cart", JSON.stringify(newCart));
   };
 
-  // ✅ Enhanced Place Order Function with Better Debugging
+  // Place Order Function (matching Cart.jsx logic)
   const placeOrder = async () => {
     console.log("=== PLACE ORDER STARTED ===");
     
-    // Check 1: Cart validation
+    // Validate cart
     if (cart.length === 0) {
       toast.error("Your cart is empty");
       return;
     }
-    console.log("✓ Cart has items:", cart);
 
-    // Check 2: User details validation
+    // Validate user details
     if (!user.phone || !user.location) {
       toast.error("Please update your profile with phone and location");
-      console.error("Missing user details:", { phone: user.phone, location: user.location });
       return;
     }
-    console.log("✓ User details valid");
 
     setIsPlacingOrder(true);
 
     try {
-      // Check 3: Token validation
       const token = localStorage.getItem("token");
       if (!token) {
         toast.error("Please login again");
         navigate("/login");
         return;
       }
-      console.log("✓ Token exists");
 
-      // Check 4: Stock validation
+      // Stock validation
       for (const item of cart) {
-        const product = products.find(p => p._id === item.productId);
+        const productId = getProductId(item);
+        const product = products.find(p => getProductId(p) === productId);
         if (!product) {
           toast.error(`Product ${item.name} not found`);
           setIsPlacingOrder(false);
@@ -205,34 +210,37 @@ const Dashboard = () => {
           return;
         }
       }
-      console.log("✓ Stock validation passed");
 
-      // Prepare order data
+      // Prepare order data - SAME FORMAT AS CART.JSX
+      const buyerId = user.id || user._id;
+      const items = cart.map(ci => {
+        const productId = getProductId(ci);
+        console.log('Product ID being sent:', productId, 'Type:', typeof productId);
+        return { 
+          productId: String(productId), // Ensure it's a string
+          quantity: ci.quantity 
+        };
+      });
+      
       const totalPrice = cart.reduce(
         (total, item) => total + item.price * item.quantity,
         0
-      );
+      ) + 20; // include delivery fee
 
       const orderData = {
-        items: cart.map((item) => ({
-          productId: item.productId,
-          name: item.name,
-          quantity: item.quantity,
-          price: item.price,
-        })),
-        totalPrice: totalPrice,
+        items,
+        buyerId,
+        totalPrice,
         paymentMethod: "cod",
         deliveryAddress: user.location,
         contactName: user.name,
         contactPhone: user.phone,
       };
 
-      console.log("Order data prepared:", orderData);
-      console.log("API URL:", `${API_BASE}/api/orders`);
-      console.log("Token (first 20 chars):", token.substring(0, 20) + "...");
+      console.log("Order payload:", orderData);
 
-      // Make API request
-      const res = await fetch(`${API_BASE}/api/orders`, {
+      // Make API request - SAME ENDPOINT AS CART.JSX
+      const res = await fetch(`${API_BASE}/api/products/order`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -241,77 +249,56 @@ const Dashboard = () => {
         body: JSON.stringify(orderData),
       });
 
-      console.log("Response received - Status:", res.status);
-      console.log("Response headers:", Object.fromEntries(res.headers.entries()));
-
-      // Check if response is JSON
-      const contentType = res.headers.get("content-type");
-      let responseData;
-
-      if (contentType && contentType.includes("application/json")) {
-        responseData = await res.json();
-        console.log("Response data:", responseData);
-      } else {
-        const textResponse = await res.text();
-        console.error("NON-JSON RESPONSE:", textResponse.substring(0, 500));
-        
-        // More specific error message
-        if (res.status === 404) {
-          throw new Error("API endpoint not found. Please check if your backend server is running and the /api/orders route exists.");
-        } else if (res.status === 500) {
-          throw new Error("Server error occurred. Check your backend logs.");
-        } else {
-          throw new Error(`Server returned HTML instead of JSON (Status: ${res.status}). Check if API endpoint exists.`);
-        }
-      }
-
-      // Check if request was successful
+      const data = await res.json();
+      
       if (!res.ok) {
-        throw new Error(responseData?.message || `Failed to place order (Status: ${res.status})`);
+        console.error('Order error response:', data);
+        const msg = data?.message || data?.error || 'Failed to place order';
+        throw new Error(msg);
       }
 
-      // Success!
-      console.log("✓ Order placed successfully!");
-      toast.success("Order placed successfully! 🎉");
+      // Success
+      console.log("Order placed successfully!");
+      toast.success(`Order placed successfully! Order ID: ${data.order._id}`);
 
       // Clear cart
       setCart([]);
       localStorage.removeItem("cart");
 
-      // Refresh data
-      await Promise.all([
-        // Refresh orders
-        fetch(`${API_BASE}/api/orders`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-          .then(res => res.ok ? res.json() : null)
-          .then(data => data && setOrders(data))
-          .catch(err => console.error("Error refreshing orders:", err)),
-        
-        // Refresh products
-        fetch(`${API_BASE}/api/products`)
-          .then(res => res.ok ? res.json() : null)
-          .then(data => data && setProducts(data))
-          .catch(err => console.error("Error refreshing products:", err))
-      ]);
+      // Refresh orders
+      const ordersEndpoint =
+        user.role === "farmer"
+          ? `${API_BASE}/api/orders/farmer`
+          : `${API_BASE}/api/orders`;
+
+      const ordersRes = await fetch(ordersEndpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (ordersRes.ok) {
+        const ordersData = await ordersRes.json();
+        setOrders(ordersData);
+      }
+
+      // Refresh products
+      const productsRes = await fetch(`${API_BASE}/api/products`);
+      if (productsRes.ok) {
+        const productsData = await productsRes.json();
+        setProducts(productsData);
+      }
 
       // Switch to orders tab
       setActiveTab("orders");
 
     } catch (err) {
-      console.error("=== ORDER PLACEMENT ERROR ===");
-      console.error("Error:", err);
-      console.error("Error message:", err.message);
-      console.error("Error stack:", err.stack);
-      
+      console.error("ORDER ERROR:", err);
       toast.error(err.message || "Failed to place order. Please try again.");
     } finally {
       setIsPlacingOrder(false);
-      console.log("=== PLACE ORDER ENDED ===");
     }
   };
 
-  // ✅ Sync tab from URL
+  // Sync tab from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get("tab");
@@ -360,7 +347,7 @@ const Dashboard = () => {
           </button>
           <button onClick={() => setActiveTab("orders")} className="nav-btn">
             <Truck size={20} />
-            <span>My Orders</span>
+            <span>{user.role === "farmer" ? "Orders Received" : "My Orders"}</span>
           </button>
           {user.role === "farmer" && (
             <button onClick={() => setActiveTab("myProducts")} className="nav-btn">
@@ -425,39 +412,46 @@ const Dashboard = () => {
                 ) : (
                   <>
                     <div className="cart-items">
-                      {cart.map((item) => (
-                        <div key={item.productId} className="cart-item">
-                          <h4>{item.name}</h4>
-                          <p className="item-price">₹{item.price} / {item.unit}</p>
-                          <div className="quantity-controls">
+                      {cart.map((item) => {
+                        const itemId = getProductId(item);
+                        return (
+                          <div key={itemId} className="cart-item">
+                            <h4>{item.name}</h4>
+                            <p className="item-price">₹{item.price} / {item.unit}</p>
+                            <div className="quantity-controls">
+                              <button
+                                onClick={() => updateQuantity(itemId, -1)}
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus size={16} />
+                              </button>
+                              <span>{item.quantity}</span>
+                              <button
+                                onClick={() => updateQuantity(itemId, 1)}
+                                aria-label="Increase quantity"
+                              >
+                                <Plus size={16} />
+                              </button>
+                            </div>
+                            <p className="item-total">
+                              Total: ₹{(item.price * item.quantity).toFixed(2)}
+                            </p>
                             <button
-                              onClick={() => updateQuantity(item.productId, -1)}
-                              aria-label="Decrease quantity"
+                              onClick={() => removeFromCart(itemId)}
+                              className="remove-btn"
                             >
-                              <Minus size={16} />
-                            </button>
-                            <span>{item.quantity}</span>
-                            <button
-                              onClick={() => updateQuantity(item.productId, 1)}
-                              aria-label="Increase quantity"
-                            >
-                              <Plus size={16} />
+                              Remove
                             </button>
                           </div>
-                          <p className="item-total">
-                            Total: ₹{(item.price * item.quantity).toFixed(2)}
-                          </p>
-                          <button
-                            onClick={() => removeFromCart(item.productId)}
-                            className="remove-btn"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                     <div className="cart-total">
-                      <h3>Total: ₹{cartTotal.toFixed(2)}</h3>
+                      <div className="cart-breakdown">
+                        <p>Subtotal: ₹{cartTotal.toFixed(2)}</p>
+                        <p>Delivery Fee: ₹20.00</p>
+                        <h3>Total: ₹{(cartTotal + 20).toFixed(2)}</h3>
+                      </div>
                       <button 
                         onClick={placeOrder} 
                         className="checkout-btn"
@@ -475,10 +469,14 @@ const Dashboard = () => {
           {/* Orders Tab */}
           {activeTab === "orders" && (
             <div className="orders-dashboard">
-              <h2>My Orders</h2>
+              <h2>{user.role === "farmer" ? "Orders Received" : "My Orders"}</h2>
               <div className="orders-list">
                 {orders.length === 0 ? (
-                  <p className="no-orders">No orders yet. Start shopping!</p>
+                  <p className="no-orders">
+                    {user.role === "farmer" 
+                      ? "No orders received yet." 
+                      : "No orders yet. Start shopping!"}
+                  </p>
                 ) : (
                   orders.map((order) => (
                     <div key={order._id} className="order-card">
@@ -491,7 +489,7 @@ const Dashboard = () => {
                       <div className="order-items">
                         {order.items.map((item, idx) => (
                           <div key={idx} className="order-item">
-                            <p className="item-name">{item.name}</p>
+                            <p className="item-name">{item.name || "Product"}</p>
                             <p className="item-details">
                               Quantity: {item.quantity} × ₹{item.price} = ₹{(item.quantity * item.price).toFixed(2)}
                             </p>
@@ -500,6 +498,9 @@ const Dashboard = () => {
                       </div>
                       <div className="order-footer">
                         <p className="order-total">Total: ₹{order.totalPrice.toFixed(2)}</p>
+                        <p className="order-payment">
+                          Payment: {order.paymentMethod === "cod" ? "Cash on Delivery" : "UPI"}
+                        </p>
                         <p className="order-contact">
                           Contact: {order.contactName} ({order.contactPhone})
                         </p>
@@ -507,6 +508,11 @@ const Dashboard = () => {
                         <p className="order-date">
                           Ordered on: {new Date(order.createdAt).toLocaleDateString()}
                         </p>
+                        {user.role === "farmer" && order.buyer && (
+                          <p className="order-buyer">
+                            Buyer: {order.buyer.name || order.buyer.email}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))
@@ -519,7 +525,21 @@ const Dashboard = () => {
           {activeTab === "myProducts" && user.role === "farmer" && (
             <div className="farmer-dashboard">
               <h2>My Products</h2>
-              <p>Coming soon — manage your listed products here.</p>
+              <div className="farmer-products-list">
+                {products
+                  .filter(p => p.farmerId === user._id || p.farmerId === user.id)
+                  .map(product => (
+                    <div key={product._id} className="farmer-product-card">
+                      {product.imageUrl && (
+                        <img src={product.imageUrl} alt={product.name} />
+                      )}
+                      <h3>{product.name}</h3>
+                      <p>Price: ₹{product.price}/{product.unit}</p>
+                      <p>Stock: {product.stock} {product.unit}</p>
+                      <p className="description">{product.description}</p>
+                    </div>
+                  ))}
+              </div>
             </div>
           )}
         </div>
