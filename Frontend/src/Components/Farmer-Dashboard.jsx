@@ -42,7 +42,7 @@ const FarmerDashboard = () => {
       // sellerId can be farmer or retailer who created products (we store owner id in farmerId)
       const token = localStorage.getItem('token');
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const res = await axios.get(`http://localhost:5050/api/orders/farmer/${sellerId}`, { headers });
+      const res = await axios.get(`https://farm-fresh-product-backend-txzb.onrender.com/api/orders/farmer/${sellerId}`, { headers });
       setOrders(res.data || []);
     } catch (err) {
       console.error('Failed to fetch orders for seller', err);
@@ -53,7 +53,7 @@ const FarmerDashboard = () => {
     try {
       const token = localStorage.getItem('token');
       const headers = { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
-      const res = await axios.patch(`http://localhost:5050/api/orders/${orderId}`, { status: newStatus }, { headers });
+      const res = await axios.patch(`https://farm-fresh-product-backend-txzb.onrender.com/api/orders/${orderId}`, { status: newStatus }, { headers });
       // update local state
       setOrders((prev) => prev.map(o => (o._id === orderId ? res.data : o)));
       alert('Order updated');
@@ -73,7 +73,7 @@ const FarmerDashboard = () => {
         videoUrl: newProduct.videoUrl || "",
         farmerId,
       };
-      const res = await axios.post(`http://localhost:5050/api/products`, payload);
+      const res = await axios.post(`https://farm-fresh-product-backend-txzb.onrender.com/api/products`, payload);
       setProducts([...products, res.data]);
       setNewProduct({ name: "", price: "", stock: "", description: "" });
       alert("Product added successfully!");
@@ -113,7 +113,7 @@ const FarmerDashboard = () => {
 
   const handleToggleVisibility = async (productId, visible) => {
     try {
-      const res = await axios.patch(`http://localhost:5050/api/products/${productId}`, { visible: !visible });
+      const res = await axios.patch(`https://farm-fresh-product-backend-txzb.onrender.com/api/products/${productId}`, { visible: !visible });
       setProducts(products.map(p => (p._id === productId ? res.data : p)));
     } catch (err) {
       console.error(err);
@@ -143,7 +143,7 @@ const FarmerDashboard = () => {
         videoUrl: editProduct.videoUrl || "",
         visible: editProduct.visible,
       };
-      const res = await axios.patch(`http://localhost:5050/api/products/${id}`, payload);
+      const res = await axios.patch(`https://farm-fresh-product-backend-txzb.onrender.com/api/products/${id}`, payload);
       setProducts(products.map(p => (p._id === id ? res.data : p)));
       closeEdit();
       alert("Product updated");
