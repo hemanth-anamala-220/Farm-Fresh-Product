@@ -22,7 +22,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("products");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
-  const API_BASE = import.meta?.env?.VITE_API_URL || "http://localhost:5050";
+  const API_BASE = import.meta?.env?.VITE_API_URL || "https://farm-fresh-product-backend-txzb.onrender.com";
 
   // Helper function to get consistent product ID (same as Cart.jsx)
   const getProductId = (item) => item._id || item.id;
