@@ -161,8 +161,22 @@ const FarmerDashboard = () => {
           <h2>Farm Fresh</h2>
         </div>
         <nav className="nav-links">
-          <button onClick={() => navigate("/")}>Home</button>
-          <button onClick={() => localStorage.clear() && navigate("/login")}>Logout</button>
+          <button
+            onClick={() => {
+              const el = document.getElementById("orders-section");
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            Orders
+          </button>
+          <button
+            onClick={() => {
+              const el = document.getElementById("add-product-card");
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            New Product
+          </button>
         </nav>
       </aside>
 
@@ -172,7 +186,7 @@ const FarmerDashboard = () => {
           <p>Your role: <span className="role-tag">{user?.role}</span></p>
         </div>
 
-        <div className="add-product-card">
+  <div id="add-product-card" className="add-product-card">
           <h2><Plus size={20} /> Add New Product</h2>
           <form onSubmit={handleAddProduct} className="form">
             <input
@@ -249,7 +263,7 @@ const FarmerDashboard = () => {
           </div>
         </div>
 
-        <div className="orders-section">
+  <div id="orders-section" className="orders-section">
           <h2>Orders for your products</h2>
           {orders.length === 0 ? (
             <p>No orders yet.</p>
