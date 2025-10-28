@@ -107,7 +107,7 @@ export default function Cart() {
       console.log('Order payload:', { items, buyerId, totalPrice, paymentMethod, deliveryAddress, contactName, contactPhone });
 
       const token = localStorage.getItem('token');
-      const res = await fetch(`https://farm-fresh-product-backend-txzb.onrender.com/api/products/order`, {
+      const res = await fetch(`${API_BASE}/api/products/order`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
