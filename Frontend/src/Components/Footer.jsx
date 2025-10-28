@@ -35,10 +35,10 @@ const Footer = () => {
             <a href="#" className="social-link" aria-label="Twitter">
               <Twitter size={20} />
             </a>
-            <a href="#" className="social-link" aria-label="Instagram">
+            <a href="https://www.instagram.com/hemanth_naidus__123/" className="social-link" aria-label="Instagram">
               <Instagram size={20} />
             </a>
-            <a href="#" className="social-link" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/in/hemanth-anamala-594723237" className="social-link" aria-label="LinkedIn">
               <Linkedin size={20} />
             </a>
           </div>
@@ -74,7 +74,7 @@ const Footer = () => {
           <ul className="footer-contact">
             <li>
               <MapPin size={18} />
-              <span>Vijayawada, Andhra Pradesh, India</span>
+              <span>Vijayawada, Eluru, Nuzvid, Andhra Pradesh, India</span>
             </li>
             <li>
               <Phone size={18} />
