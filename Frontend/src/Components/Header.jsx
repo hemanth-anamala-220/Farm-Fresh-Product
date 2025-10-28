@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { Menu, X, ShoppingCart } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Menu, X, ShoppingCart, ArrowLeft } from "lucide-react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "../Styles/Header.css";
 
 const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const stored = localStorage.getItem("user");
@@ -43,6 +44,9 @@ const Header = () => {
   return (
     <header className="header">
       <div className="header-container">
+        <button className="back-button" onClick={() => navigate(-1)}>
+          <ArrowLeft size={24} />
+        </button>
         <div className="logo">
           <span className="logo-icon">🌿</span>
           <h2>Farm Fresh Products</h2>
