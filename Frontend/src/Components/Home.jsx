@@ -115,10 +115,22 @@ const Home = () => {
               <img
                 src={product.imageUrl || product.image || "/placeholder.png"}
                 alt={product.name}
-                style={{ cursor: product.imageUrl || product.image ? "pointer" : "default" }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "/placeholder.png";
+                }}
+                style={{ 
+                  cursor: product.imageUrl || product.image ? "pointer" : "default",
+                  objectFit: "cover",
+                  width: "100%",
+                  height: "200px"
+                }}
                 onClick={() => {
                   const src = product.imageUrl || product.image;
-                  if (src) setModalContent({ type: "image", src }); setModalOpen(true);
+                  if (src) {
+                    setModalContent({ type: "image", src });
+                    setModalOpen(true);
+                  }
                 }}
               />
               <h3>{product.name}</h3>
