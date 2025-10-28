@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   const API_BASE = import.meta?.env?.VITE_API_URL || "https://farm-fresh-product-backend-txzb.onrender.com";
 
-  // Helper function to get consistent product ID (same as Cart.jsx)
+  // Helper function to get consistent product ID
   const getProductId = (item) => item._id || item.id;
 
   // Load user and cart on mount
@@ -35,8 +35,12 @@ const Dashboard = () => {
       return;
     }
 
-    const parsedUser = JSON.parse(storedUser);
-    setUser(parsedUser);
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+    } catch (e) {
+      setUser(null);
+    }
 
     const savedCart = localStorage.getItem("cart");
     if (savedCart) {
@@ -47,55 +51,85 @@ const Dashboard = () => {
         localStorage.removeItem("cart");
       }
     }
+
+    const onAuthChanged = () => {
+      const s = localStorage.getItem("user");
+      if (s) {
+        try { setUser(JSON.parse(s)); } catch (e) { setUser(null); }
+      } else setUser(null);
+    };
+    window.addEventListener('authChanged', onAuthChanged);
+    window.addEventListener('storage', onAuthChanged);
+    return () => {
+      window.removeEventListener('authChanged', onAuthChanged);
+      window.removeEventListener('storage', onAuthChanged);
+    };
   }, [navigate]);
 
-  // Fetch products and orders
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/api/products`);
-        if (!res.ok) throw new Error("Failed to fetch products");
-        const data = await res.json();
-        setProducts(data);
-      } catch (err) {
-        console.error("Error fetching products:", err);
-        toast.error("Failed to load products");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const fetchOrders = async () => {
-      if (!user) return;
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const endpoint =
-          user.role === "farmer"
-            ? `${API_BASE}/api/orders/farmer`
-            : `${API_BASE}/api/orders`;
-
-        const res = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) throw new Error("Failed to fetch orders");
-        const data = await res.json();
-        setOrders(data);
-      } catch (err) {
-        console.error("Error fetching orders:", err);
-      }
-    };
-
-    fetchProducts();
-    if (user) {
-      fetchOrders();
+  // Fetch products
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/products`);
+      if (!res.ok) throw new Error("Failed to fetch products");
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      toast.error("Failed to load products");
     }
-  }, [user, API_BASE]);
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await fetchProducts();
+      setLoading(false);
+    };
+    loadData();
+  }, [API_BASE]);
+  // Fetch orders for the current user
+  const fetchOrders = async () => {
+    if (!user) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.warning("Please login again to view orders");
+        return;
+      }
+
+      const userId = String(user._id || user.id);
+      const endpoint = `${API_BASE}/api/orders/customer/${userId}`;
+      console.log("Fetching orders from:", endpoint);
+
+      const res = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error(`Failed to fetch orders: ${res.status}`);
+
+      const data = await res.json();
+      const ordersData = Array.isArray(data) ? data : data.orders || [];
+
+      const filtered = ordersData.filter(o => String(o.customerId || o.buyerId || o.buyer?._id || o.buyer) === userId);
+      console.log("Orders loaded:", filtered.length);
+      setOrders(filtered);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      toast.error("Failed to load orders");
+      setOrders([]);
+    }
+  };
+
+  // Fetch orders when user is available and orders tab is active
+  useEffect(() => {
+    if (user && activeTab === "orders") fetchOrders();
+  }, [user, activeTab]);
 
   // Add item to cart
   const addToCart = (product) => {
+    if (!product) return;
     if (product.stock < 1) {
       toast.error("Product is out of stock");
       return;
@@ -103,7 +137,7 @@ const Dashboard = () => {
 
     const productId = getProductId(product);
     const existing = cart.find((item) => getProductId(item) === productId);
-    
+
     if (existing && existing.quantity >= product.stock) {
       toast.error("Cannot add more than available stock");
       return;
@@ -127,7 +161,7 @@ const Dashboard = () => {
             image: product.imageUrl,
             farmer: product.farmerName || "Farm Fresh",
             location: product.location || "Local",
-            organic: product.organic || false
+            organic: product.organic || false,
           },
         ];
 
@@ -135,6 +169,7 @@ const Dashboard = () => {
     localStorage.setItem("cart", JSON.stringify(newCart));
     toast.success(`Added ${product.name} to cart`);
   };
+  
 
   // Remove item from cart
   const removeFromCart = (productId) => {
@@ -169,7 +204,7 @@ const Dashboard = () => {
     localStorage.setItem("cart", JSON.stringify(newCart));
   };
 
-  // Place Order Function (matching Cart.jsx logic)
+  // Place Order Function - IMPROVED WITH BETTER BUYER ID HANDLING
   const placeOrder = async () => {
     console.log("=== PLACE ORDER STARTED ===");
     
@@ -211,14 +246,18 @@ const Dashboard = () => {
         }
       }
 
-      // Prepare order data - SAME FORMAT AS CART.JSX
-      const buyerId = user.id || user._id;
+      // Prepare order data with explicit buyer ID
+      const buyerId = String(user._id || user.id);
+      console.log("Buyer ID for order:", buyerId);
+      
       const items = cart.map(ci => {
         const productId = getProductId(ci);
-        console.log('Product ID being sent:', productId, 'Type:', typeof productId);
         return { 
-          productId: String(productId), // Ensure it's a string
-          quantity: ci.quantity 
+          productId: String(productId),
+          quantity: ci.quantity,
+          name: ci.name,
+          price: ci.price,
+          unit: ci.unit
         };
       });
       
@@ -229,17 +268,20 @@ const Dashboard = () => {
 
       const orderData = {
         items,
-        buyerId,
+        buyerId: buyerId, // Explicitly set buyer ID
+        buyer: buyerId, // Also set as 'buyer' field for compatibility
         totalPrice,
         paymentMethod: "cod",
         deliveryAddress: user.location,
         contactName: user.name,
         contactPhone: user.phone,
+        status: "pending"
       };
 
-      console.log("Order payload:", orderData);
+      console.log("=== ORDER DATA ===");
+      console.log("Full order data:", JSON.stringify(orderData, null, 2));
 
-      // Make API request - SAME ENDPOINT AS CART.JSX
+      // Make API request
       const res = await fetch(`${API_BASE}/api/products/order`, {
         method: "POST",
         headers: {
@@ -257,38 +299,25 @@ const Dashboard = () => {
         throw new Error(msg);
       }
 
-      // Success
-      console.log("Order placed successfully!");
+      console.log("Order placed successfully:", data);
       toast.success(`Order placed successfully! Order ID: ${data.order._id}`);
 
       // Clear cart
       setCart([]);
       localStorage.removeItem("cart");
 
-      // Refresh orders
-      const ordersEndpoint =
-        user.role === "farmer"
-          ? `${API_BASE}/api/orders/farmer`
-          : `${API_BASE}/api/orders`;
-
-      const ordersRes = await fetch(ordersEndpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (ordersRes.ok) {
-        const ordersData = await ordersRes.json();
-        setOrders(ordersData);
-      }
-
-      // Refresh products
-      const productsRes = await fetch(`${API_BASE}/api/products`);
-      if (productsRes.ok) {
-        const productsData = await productsRes.json();
-        setProducts(productsData);
-      }
-
-      // Switch to orders tab
+      // Switch to orders tab first
       setActiveTab("orders");
+
+      // Small delay to ensure state update
+      setTimeout(async () => {
+        // Refresh orders to show the new order
+        console.log("Refreshing orders list...");
+        await fetchOrders();
+
+        // Refresh products to update stock
+        await fetchProducts();
+      }, 500);
 
     } catch (err) {
       console.error("ORDER ERROR:", err);
@@ -337,20 +366,25 @@ const Dashboard = () => {
         </div>
 
         <nav className="nav-links">
-          <button onClick={() => navigate("/")} className="nav-btn">
-            <Home size={20} />
-            <span>Home</span>
-          </button>
-          <button onClick={() => setActiveTab("products")} className="nav-btn">
+          <button 
+            onClick={() => setActiveTab("products")} 
+            className={`nav-btn ${activeTab === "products" ? "active" : ""}`}
+          >
             <ShoppingBag size={20} />
             <span>Browse Products</span>
           </button>
-          <button onClick={() => setActiveTab("orders")} className="nav-btn">
+          <button 
+            onClick={() => setActiveTab("orders")} 
+            className={`nav-btn ${activeTab === "orders" ? "active" : ""}`}
+          >
             <Truck size={20} />
-            <span>{user.role === "farmer" ? "Orders Received" : "My Orders"}</span>
+            <span>My Orders</span>
           </button>
           {user.role === "farmer" && (
-            <button onClick={() => setActiveTab("myProducts")} className="nav-btn">
+            <button 
+              onClick={() => setActiveTab("myProducts")} 
+              className={`nav-btn ${activeTab === "myProducts" ? "active" : ""}`}
+            >
               <Leaf size={20} />
               <span>My Products</span>
             </button>
@@ -466,53 +500,113 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Orders Tab */}
+          {/* Orders Tab - IMPROVED WITH BETTER DISPLAY */}
           {activeTab === "orders" && (
             <div className="orders-dashboard">
-              <h2>{user.role === "farmer" ? "Orders Received" : "My Orders"}</h2>
+              <div className="orders-header">
+                <h2>My Orders</h2>
+                <div style={{display: 'flex', gap: '10px'}}>
+                  <button 
+                    onClick={fetchOrders} 
+                    className="refresh-btn"
+                    title="Refresh orders"
+                  >
+                    ↻ Refresh
+                  </button>
+                  <button 
+                    onClick={() => {
+                      console.log("=== DEBUG INFO ===");
+                      console.log("User:", user);
+                      console.log("User ID:", user._id || user.id);
+                      console.log("Orders:", orders);
+                      console.log("API Base:", API_BASE);
+                    }} 
+                    className="refresh-btn"
+                    title="Debug Info"
+                  >
+                    Debug
+                  </button>
+                </div>
+              </div>
               <div className="orders-list">
                 {orders.length === 0 ? (
-                  <p className="no-orders">
-                    {user.role === "farmer" 
-                      ? "No orders received yet." 
-                      : "No orders yet. Start shopping!"}
-                  </p>
+                  <div className="no-orders">
+                    <p>No orders yet. Start shopping!</p>
+                  </div>
                 ) : (
                   orders.map((order) => (
                     <div key={order._id} className="order-card">
                       <div className="order-header">
                         <h3>Order #{order._id.slice(-6)}</h3>
-                        <span className={`status ${order.status}`}>
+                        <span className={`status status-${order.status}`}>
                           {order.status}
                         </span>
                       </div>
-                      <div className="order-items">
-                        {order.items.map((item, idx) => (
-                          <div key={idx} className="order-item">
-                            <p className="item-name">{item.name || "Product"}</p>
-                            <p className="item-details">
-                              Quantity: {item.quantity} × ₹{item.price} = ₹{(item.quantity * item.price).toFixed(2)}
-                            </p>
-                          </div>
-                        ))}
+
+                      <div className="order-customer-info">
+                        <h4>Customer Information</h4>
+                        <p><strong>Name:</strong> {order.contactName}</p>
+                        <p><strong>Phone:</strong> {order.contactPhone}</p>
+                        <p><strong>Delivery Address:</strong> {order.deliveryAddress}</p>
                       </div>
-                      <div className="order-footer">
-                        <p className="order-total">Total: ₹{order.totalPrice.toFixed(2)}</p>
-                        <p className="order-payment">
-                          Payment: {order.paymentMethod === "cod" ? "Cash on Delivery" : "UPI"}
-                        </p>
-                        <p className="order-contact">
-                          Contact: {order.contactName} ({order.contactPhone})
-                        </p>
-                        <p className="order-address">Address: {order.deliveryAddress}</p>
-                        <p className="order-date">
-                          Ordered on: {new Date(order.createdAt).toLocaleDateString()}
-                        </p>
-                        {user.role === "farmer" && order.buyer && (
-                          <p className="order-buyer">
-                            Buyer: {order.buyer.name || order.buyer.email}
-                          </p>
+
+                      <div className="order-items">
+                        <h4>Ordered Products</h4>
+                        {order.items && order.items.length > 0 ? (
+                          order.items.map((item, idx) => (
+                            <div key={idx} className="order-item">
+                              <div className="item-details-grid">
+                                <div className="item-main-info">
+                                  <h5 className="item-name">
+                                    {item.name || item.productId?.name || "Product"}
+                                  </h5>
+                                  <p className="item-quantity">
+                                    Quantity: {item.quantity} {item.unit}
+                                  </p>
+                                </div>
+                                <div className="item-price-info">
+                                  <p className="item-unit-price">
+                                    Price: ₹{item.price || 0}/{item.unit}
+                                  </p>
+                                  <p className="item-total-price">
+                                    Total: ₹{((item.quantity || 0) * (item.price || 0)).toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="no-items">No items in this order</p>
                         )}
+                      </div>
+
+                      <div className="order-summary">
+                        <div className="order-totals">
+                          <div className="price-breakdown">
+                            <p><strong>Subtotal:</strong> ₹{((order.totalPrice || 0) - 20).toFixed(2)}</p>
+                            <p><strong>Delivery Fee:</strong> ₹20.00</p>
+                            <h4><strong>Total Amount:</strong> ₹{(order.totalPrice || 0).toFixed(2)}</h4>
+                          </div>
+                          <p className="payment-method">
+                            <strong>Payment Method:</strong> {order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod?.toUpperCase()}
+                          </p>
+                        </div>
+                        
+                        <div className="order-meta">
+                          <p className="order-date">
+                            <strong>Ordered on:</strong> {new Date(order.createdAt).toLocaleDateString('en-IN', {
+                              weekday: 'short',
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                          <p className="order-status">
+                            <strong>Status:</strong> {order.status?.toUpperCase()}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   ))
